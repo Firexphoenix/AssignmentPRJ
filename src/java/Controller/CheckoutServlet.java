@@ -1,0 +1,139 @@
+package Controller;
+
+import Model.Ticket;
+import Model.Invoice;
+import jakarta.servlet.RequestDispatcher;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.annotation.WebServlet;
+import jakarta.servlet.http.HttpServlet;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
+import ticketDao.TicketDao;
+import invoiceDao.InvoiceDao;
+
+import java.io.IOException;
+import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.List;
+
+@WebServlet(name = "CheckoutServlet", urlPatterns = {"/checkout"})
+public class CheckoutServlet extends HttpServlet {
+
+    private TicketDao ticketDao;
+    private InvoiceDao invoiceDao;
+
+    @Override
+    public void init() throws ServletException {
+        ticketDao = new TicketDao();
+        invoiceDao = new InvoiceDao();
+    }
+
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processCheckout(request, response);
+    }
+
+    @Override
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        processCheckout(request, response);
+    }
+
+    private void processCheckout(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        String userEmail = (session != null) ? (String) session.getAttribute("userEmail") : null;
+
+        if (userEmail == null) {
+            response.sendRedirect(request.getContextPath() + "/login/login.jsp?error=pleaseLogin");
+            return;
+        }
+
+        List<Ticket> cart = (List<Ticket>) session.getAttribute("cart");
+        String errorMessage = null;
+
+        if (cart == null || cart.isEmpty()) {
+            errorMessage = "Giỏ hàng của bạn hiện đang trống.";
+            request.setAttribute("errorMessage", errorMessage);
+            RequestDispatcher dispatcher = request.getRequestDispatcher("/manager/checkout.jsp");
+            dispatcher.forward(request, response);
+            return;
+        }
+
+        try {
+            // Kiểm tra ShowTimeID và ghế đã đặt
+            for (Ticket ticket : cart) {
+                if (!ticketDao.isShowTimeIdValid(ticket.getShowTimeID())) {
+                    errorMessage = "Suất chiếu " + ticket.getShowTimeID() + " không tồn tại.";
+                    break;
+                }
+
+                List<String> bookedSeats = ticketDao.getBookedSeats(ticket.getShowTimeID());
+                if (bookedSeats.contains(ticket.getSeatNumber())) {
+                    errorMessage = "Ghế " + ticket.getSeatNumber() + " đã được đặt bởi người khác. Vui lòng chọn lại ghế.";
+                    break;
+                }
+            }
+
+            // Nếu không có lỗi, lưu vé vào bảng Ticket
+            if (errorMessage == null) {
+                for (Ticket ticket : cart) {
+                    ticket.setStatus("Paid");
+                    ticketDao.insertTicket(ticket);
+                }
+
+                // Tạo hóa đơn tạm thời
+                Invoice invoice = createTemporaryInvoice(cart);
+                session.setAttribute("pendingInvoice", invoice);
+                session.setAttribute("cartTickets", cart); // Lưu danh sách vé để hiển thị trên trang hóa đơn
+                session.removeAttribute("cart"); // Xóa giỏ hàng
+
+                // Chuyển hướng đến trang hóa đơn
+                response.sendRedirect(request.getContextPath() + "/manager/invoice.jsp");
+                return;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            errorMessage = "Lỗi thanh toán: " + e.getMessage();
+        }
+
+        request.setAttribute("errorMessage", errorMessage);
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/manager/checkout.jsp");
+        dispatcher.forward(request, response);
+    }
+
+    private Invoice createTemporaryInvoice(List<Ticket> cart) throws SQLException {
+        // Tạo InvoiceID mới
+        String newInvoiceId;
+        String maxId = invoiceDao.getMaxInvoiceId();
+        int num = (maxId != null) ? Integer.parseInt(maxId.replace("I", "")) + 1 : 1;
+        newInvoiceId = String.format("I%03d", num);
+        while (invoiceDao.isInvoiceIdExists(newInvoiceId)) {
+            num++;
+            newInvoiceId = String.format("I%03d", num);
+        }
+
+        // Tính tổng tiền
+        double total = 0.0;
+        for (Ticket ticket : cart) {
+            String screenRoomType = ticketDao.getScreenRoomType(ticket.getShowTimeID());
+            double ticketPrice = "3D".equals(screenRoomType) ? 0.15 : 0.1; // Giá vé: 0.15 triệu cho 3D, 0.1 triệu cho 2D
+            total += ticketPrice * ticket.getQuantity();
+        }
+
+        // Lấy ngày và giờ hiện tại
+        Date now = new Date();
+        SimpleDateFormat timeFormat = new SimpleDateFormat("HH:mm:ss");
+        String time = timeFormat.format(now);
+
+        // Lấy TicketID từ vé đầu tiên trong giỏ hàng
+        String ticketId = cart.get(0).getTicketID();
+
+        // Tạo hóa đơn với trạng thái "Pending"
+        Invoice invoice = new Invoice(newInvoiceId, ticketId, now, time, total, "Pending");
+        return invoice;
+    }
+}
