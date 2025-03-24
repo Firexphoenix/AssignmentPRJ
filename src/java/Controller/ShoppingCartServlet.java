@@ -46,7 +46,6 @@ public class ShoppingCartServlet extends HttpServlet {
             action = "view";
         }
 
-        // Lấy danh sách phim và lưu vào application scope
         List<Movie> movieList = movieDAO.getAllMovies();
         request.getServletContext().setAttribute("movieList", movieList);
 
@@ -90,6 +89,29 @@ public class ShoppingCartServlet extends HttpServlet {
                     dispatcher.forward(request, response);
                 }
                 break;
+            case "adminHistory":
+                try {
+                    viewAllTicketHistory(request, response);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    request.setAttribute("error", "Lỗi khi lấy toàn bộ lịch sử đặt vé: " + e.getMessage());
+                    RequestDispatcher dispatcher = request.getRequestDispatcher("/manager/adminTicketHistory.jsp"); // Cập nhật đường dẫn
+                    dispatcher.forward(request, response);
+                }
+                break;
+            case "deleteTicket":
+                try {
+                    deleteTicket(request, response);
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                    request.setAttribute("error", "Lỗi khi xóa vé: " + e.getMessage());
+                    try {
+                        viewAllTicketHistory(request, response);
+                    } catch (SQLException ex) {
+                        Logger.getLogger(ShoppingCartServlet.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                break;
             default:
                 viewCart(request, response);
                 break;
@@ -125,7 +147,6 @@ public class ShoppingCartServlet extends HttpServlet {
             return;
         }
 
-        // Lấy danh sách ghế đã đặt nếu showTimeId tồn tại
         List<String> bookedSeats = new ArrayList<>();
         if (showTimeId != null && !showTimeId.trim().isEmpty()) {
             if (!ticketDAO.isShowTimeIdValid(showTimeId)) {
@@ -154,34 +175,41 @@ public class ShoppingCartServlet extends HttpServlet {
         String showTimeId = request.getParameter("showTimeId");
         String[] seats = request.getParameterValues("seats");
 
-        // Kiểm tra đầu vào
         if (movieId == null || movieId.trim().isEmpty() || showTimeId == null || showTimeId.trim().isEmpty() || seats == null || seats.length == 0) {
             request.setAttribute("error", "Vui lòng chọn phim, suất chiếu và ít nhất một ghế.");
             selectSeats(request, response);
             return;
         }
 
-        // Kiểm tra độ dài showTimeId
         if (showTimeId.length() > 5) {
             request.setAttribute("error", "ShowTimeID vượt quá độ dài cho phép (tối đa 5 ký tự).");
             selectSeats(request, response);
             return;
         }
 
-        // Kiểm tra ShowTimeID hợp lệ
         if (!ticketDAO.isShowTimeIdValid(showTimeId)) {
             request.setAttribute("error", "Suất chiếu " + showTimeId + " không tồn tại.");
             selectSeats(request, response);
             return;
         }
 
-        // Kiểm tra ghế đã đặt
         List<String> bookedSeats = ticketDAO.getBookedSeats(showTimeId);
         for (String seat : seats) {
             if (bookedSeats.contains(seat.trim())) {
                 request.setAttribute("error", "Ghế " + seat + " đã được đặt bởi người khác.");
                 selectSeats(request, response);
                 return;
+            }
+        }
+
+        List<Ticket> cart = getOrCreateCart(request);
+        for (String seat : seats) {
+            for (Ticket existingTicket : cart) {
+                if (existingTicket.getShowTimeID().equals(showTimeId) && existingTicket.getSeatNumber().equals(seat.trim())) {
+                    request.setAttribute("error", "Ghế " + seat + " cho suất chiếu " + showTimeId + " đã có trong giỏ hàng.");
+                    selectSeats(request, response);
+                    return;
+                }
             }
         }
 
@@ -192,17 +220,12 @@ public class ShoppingCartServlet extends HttpServlet {
             return;
         }
 
-        List<Ticket> cart = getOrCreateCart(request);
-
-        // Tạo ticketID mới
         String newTicketId;
         try {
-            // Lấy maxId từ bảng Ticket
             String maxId = ticketDAO.getMaxTicketId();
             int num = (maxId != null) ? Integer.parseInt(maxId.replace("T", "")) + 1 : 1;
             newTicketId = String.format("T%03d", num);
 
-            // Kiểm tra ticketID trong cả bảng Ticket và giỏ hàng
             while (ticketDAO.isTicketIdExists(newTicketId) || isTicketIdInCart(cart, newTicketId)) {
                 num++;
                 newTicketId = String.format("T%03d", num);
@@ -211,7 +234,6 @@ public class ShoppingCartServlet extends HttpServlet {
             throw new SQLException("Lỗi tạo mã vé: " + e.getMessage());
         }
 
-        // Lấy hoặc tạo customerID
         String customerID;
         try {
             customerID = customerDao.getCustomerIdByEmail(userEmail);
@@ -227,7 +249,6 @@ public class ShoppingCartServlet extends HttpServlet {
             throw new SQLException("Lỗi xử lý khách hàng: " + e.getMessage());
         }
 
-        // Thêm vé vào giỏ hàng
         for (String seat : seats) {
             String ticketID = newTicketId;
             Date bookingTime = new Date();
@@ -237,9 +258,7 @@ public class ShoppingCartServlet extends HttpServlet {
             Ticket ticket = new Ticket(ticketID, showTimeId, customerID, seat.trim(), bookingTime, status, movieId, quantity);
             cart.add(ticket);
 
-            // Tăng ticketID cho vé tiếp theo
             newTicketId = generateNextTicketId(newTicketId);
-            // Đảm bảo ticketID mới không trùng với bảng Ticket và giỏ hàng
             while (ticketDAO.isTicketIdExists(newTicketId) || isTicketIdInCart(cart, newTicketId)) {
                 newTicketId = generateNextTicketId(newTicketId);
             }
@@ -353,10 +372,7 @@ public class ShoppingCartServlet extends HttpServlet {
             return;
         }
 
-        // Lấy danh sách vé
         List<Ticket> ticketHistory = ticketDAO.getTicketHistoryByEmail(userEmail);
-
-        // Lấy danh sách MovieID từ ticketHistory
         Set<String> movieIds = new HashSet<>();
         for (Ticket ticket : ticketHistory) {
             String movieId = ticket.getMovieID();
@@ -365,7 +381,6 @@ public class ShoppingCartServlet extends HttpServlet {
             }
         }
 
-        // Lấy thông tin phim từ MovieDao
         Map<String, String> movieTitles = new HashMap<>();
         for (String movieId : movieIds) {
             Movie movie = movieDAO.getMovieById(movieId);
@@ -374,7 +389,6 @@ public class ShoppingCartServlet extends HttpServlet {
             }
         }
 
-        // Truyền dữ liệu sang JSP
         if (ticketHistory == null || ticketHistory.isEmpty()) {
             request.setAttribute("error", "Không tìm thấy lịch sử đặt vé cho email: " + userEmail);
         } else {
@@ -384,5 +398,73 @@ public class ShoppingCartServlet extends HttpServlet {
 
         RequestDispatcher dispatcher = request.getRequestDispatcher("/manager/ticketHistory.jsp");
         dispatcher.forward(request, response);
+    }
+
+    private void viewAllTicketHistory(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        HttpSession session = request.getSession(false);
+        String userEmail = (session != null) ? (String) session.getAttribute("userEmail") : null;
+        String role = (session != null) ? (String) session.getAttribute("role") : null;
+
+        if (userEmail == null || role == null || (!"Manager".equalsIgnoreCase(role) && !"Employee".equalsIgnoreCase(role))) {
+            response.sendRedirect(request.getContextPath() + "/login/login.jsp?error=adminAccessRequired");
+            return;
+        }
+
+        List<Ticket> allTicketHistory = ticketDAO.getAllTicketHistory();
+        Set<String> customerIds = new HashSet<>();
+        Set<String> movieIds = new HashSet<>();
+        for (Ticket ticket : allTicketHistory) {
+            customerIds.add(ticket.getCustomerID());
+            movieIds.add(ticket.getMovieID());
+        }
+
+        Map<String, String> customerEmails = new HashMap<>();
+        for (String customerId : customerIds) {
+            String email = customerDao.getEmailByCustomerId(customerId);
+            if (email != null) {
+                customerEmails.put(customerId, email);
+            }
+        }
+
+        Map<String, String> movieTitles = new HashMap<>();
+        for (String movieId : movieIds) {
+            Movie movie = movieDAO.getMovieById(movieId);
+            if (movie != null && movie.getMovieTitle() != null) {
+                movieTitles.put(movieId, movie.getMovieTitle());
+            }
+        }
+
+        if (allTicketHistory == null || allTicketHistory.isEmpty()) {
+            request.setAttribute("error", "Không có lịch sử đặt vé nào trong hệ thống.");
+        } else {
+            request.setAttribute("allTicketHistory", allTicketHistory);
+            request.setAttribute("customerEmails", customerEmails);
+            request.setAttribute("movieTitles", movieTitles);
+        }
+
+        RequestDispatcher dispatcher = request.getRequestDispatcher("/manager/adminTicketHistory.jsp"); // Cập nhật đường dẫn
+        dispatcher.forward(request, response);
+    }
+
+    private void deleteTicket(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException, SQLException {
+        HttpSession session = request.getSession(false);
+        String userEmail = (session != null) ? (String) session.getAttribute("userEmail") : null;
+        String role = (session != null) ? (String) session.getAttribute("role") : null;
+
+        if (userEmail == null || role == null || (!"Manager".equalsIgnoreCase(role) && !"Employee".equalsIgnoreCase(role))) {
+            response.sendRedirect(request.getContextPath() + "/login/login.jsp?error=adminAccessRequired");
+            return;
+        }
+
+        String ticketId = request.getParameter("ticketId");
+        if (ticketId != null) {
+            ticketDAO.deleteTicket(ticketId);
+            response.sendRedirect("cart?action=adminHistory&message=TicketDeleted");
+        } else {
+            request.setAttribute("error", "Không tìm thấy mã vé để xóa.");
+            viewAllTicketHistory(request, response);
+        }
     }
 }

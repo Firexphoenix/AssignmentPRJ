@@ -166,6 +166,15 @@
                     <h1>Sign In</h1>
                     <p class="text-muted">Access your account securely</p>
                 </div>
+                
+                <c:if test="${not empty sessionScope.successMessage}">
+                    <div class="alert alert-success">
+                        ${sessionScope.successMessage}
+                        <%
+                            session.removeAttribute("successMessage");
+                        %>
+                    </div>
+                </c:if>
 
                 <form action="${pageContext.request.contextPath}/login" method="post">
                     <div class="input-group">

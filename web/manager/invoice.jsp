@@ -24,7 +24,7 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>THVB Cinema - Hóa đơn</title>
-        <link rel="stylesheet" href="../css/userStyle.css">
+        <<link rel="stylesheet" href="css/userStyle.css">
         <script defer src="js/userScript.js"></script>
         <style>
             .nav-menu {
@@ -118,7 +118,7 @@
                 <li><a href="<%= request.getContextPath()%>/">Home</a></li>
                 <li><a href="<%= request.getContextPath()%>/Movie.jsp">Movie</a></li>
                 <li><a href="<%= request.getContextPath()%>/TV_Series.jsp">TV Series</a></li>
-                <li><a href="<%= request.getContextPath()%>/manager/shoppingCart.jsp">Cart</a></li>
+                <li><a href="<%= request.getContextPath()%>/cart">Cart</a></li>
             </ul>
         </div>
 

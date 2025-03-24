@@ -2,6 +2,7 @@ package Controller;
 
 import Model.Ticket;
 import Model.Invoice;
+import dao.DBconnection;
 import jakarta.servlet.RequestDispatcher;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
@@ -11,12 +12,13 @@ import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
 import ticketDao.TicketDao;
 import invoiceDao.InvoiceDao;
-
 import java.io.IOException;
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Random;
 
 @WebServlet(name = "CheckoutServlet", urlPatterns = {"/checkout"})
 public class CheckoutServlet extends HttpServlet {
@@ -63,7 +65,11 @@ public class CheckoutServlet extends HttpServlet {
             return;
         }
 
+        Connection conn = null;
         try {
+            conn = DBconnection.getConnection();
+            conn.setAutoCommit(false); // Bắt đầu giao dịch
+
             // Kiểm tra ShowTimeID và ghế đã đặt
             for (Ticket ticket : cart) {
                 if (!ticketDao.isShowTimeIdValid(ticket.getShowTimeID())) {
@@ -78,26 +84,45 @@ public class CheckoutServlet extends HttpServlet {
                 }
             }
 
-            // Nếu không có lỗi, lưu vé vào bảng Ticket
+            // Nếu không có lỗi, tiến hành chuẩn bị dữ liệu để thanh toán qua VNPay
             if (errorMessage == null) {
-                for (Ticket ticket : cart) {
-                    ticket.setStatus("Paid");
-                    ticketDao.insertTicket(ticket);
-                }
-
-                // Tạo hóa đơn tạm thời
+                // Tạo hóa đơn tạm thời (chưa lưu vào database)
                 Invoice invoice = createTemporaryInvoice(cart);
-                session.setAttribute("pendingInvoice", invoice);
-                session.setAttribute("cartTickets", cart); // Lưu danh sách vé để hiển thị trên trang hóa đơn
-                session.removeAttribute("cart"); // Xóa giỏ hàng
 
-                // Chuyển hướng đến trang hóa đơn
-                response.sendRedirect(request.getContextPath() + "/manager/invoice.jsp");
+                // Tạo mã giao dịch cho VNPay
+                String transactionId = "VNP" + System.currentTimeMillis() + new Random().nextInt(1000);
+
+                // Lưu thông tin tạm thời vào session để sử dụng sau khi thanh toán
+                session.setAttribute("pendingInvoice", invoice);
+                session.setAttribute("pendingCart", cart);
+                session.setAttribute("pendingTransactionId", transactionId);
+
+                conn.commit(); // Xác nhận giao dịch (không có thay đổi trong database)
+
+                // Chuyển hướng đến VNPayServlet để thanh toán
+                response.sendRedirect(request.getContextPath() + "/vnpay?action=pay&invoiceId=" + invoice.getInvoiceID() + "&amount=" + invoice.getTotal() + "&transactionId=" + transactionId);
+                session.removeAttribute("cart"); // Xóa giỏ hàng
                 return;
             }
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback(); // Rollback nếu có lỗi
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
             e.printStackTrace();
-            errorMessage = "Lỗi thanh toán: " + e.getMessage();
+            errorMessage = "Lỗi kiểm tra dữ liệu: " + e.getMessage();
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
         request.setAttribute("errorMessage", errorMessage);
@@ -132,8 +157,8 @@ public class CheckoutServlet extends HttpServlet {
         // Lấy TicketID từ vé đầu tiên trong giỏ hàng
         String ticketId = cart.get(0).getTicketID();
 
-        // Tạo hóa đơn với trạng thái "Pending"
-        Invoice invoice = new Invoice(newInvoiceId, ticketId, now, time, total, "Pending");
+        // Tạo hóa đơn với trạng thái "Paid"
+        Invoice invoice = new Invoice(newInvoiceId, ticketId, now, time, total, "Paid");
         return invoice;
     }
 }

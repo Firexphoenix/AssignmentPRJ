@@ -142,6 +142,18 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        String action = request.getParameter("action");
+        if (action != null && action.equals("changePassword")) {
+            // Hiển thị trang đổi mật khẩu
+            HttpSession session = request.getSession(false);
+            if (session == null || session.getAttribute("userEmail") == null) {
+                response.sendRedirect("login/login.jsp?error=pleaseLogin");
+                return;
+            }
+            request.getRequestDispatcher("login/changePassword.jsp").forward(request, response);
+            return;
+        }
+
         HttpSession session = request.getSession(false);
         if (session != null && session.getAttribute("userEmail") != null) {
             redirectToDashboard(session, response);
@@ -153,6 +165,13 @@ public class LoginServlet extends HttpServlet {
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+        String action = request.getParameter("action");
+
+        if (action != null && action.equals("changePassword")) {
+            changePassword(request, response);
+            return;
+        }
+
         String email = request.getParameter("email");
         String password = request.getParameter("password");
 
@@ -172,6 +191,58 @@ public class LoginServlet extends HttpServlet {
 
         createSession(request, account.getEmail(), account.getRole());
         redirectToDashboard(request.getSession(), response);
+    }
+
+    private void changePassword(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+        HttpSession session = request.getSession(false);
+        if (session == null || session.getAttribute("userEmail") == null) {
+            response.sendRedirect("login/login.jsp?error=pleaseLogin");
+            return;
+        }
+
+        String email = (String) session.getAttribute("userEmail");
+        String oldPassword = request.getParameter("oldPassword");
+        String newPassword = request.getParameter("newPassword");
+        String confirmPassword = request.getParameter("confirmPassword");
+
+        // Kiểm tra dữ liệu đầu vào
+        if (oldPassword == null || oldPassword.trim().isEmpty()
+                || newPassword == null || newPassword.trim().isEmpty()
+                || confirmPassword == null || confirmPassword.trim().isEmpty()) {
+            request.setAttribute("errorMessage", "Vui lòng điền đầy đủ các trường!");
+            request.getRequestDispatcher("login/changePassword.jsp").forward(request, response);
+            return;
+        }
+
+        if (!newPassword.equals(confirmPassword)) {
+            request.setAttribute("errorMessage", "Mật khẩu mới và xác nhận mật khẩu không khớp!");
+            request.getRequestDispatcher("login/changePassword.jsp").forward(request, response);
+            return;
+        }
+
+        // Kiểm tra độ dài mật khẩu mới (tùy chọn)
+        if (newPassword.length() < 6) {
+            request.setAttribute("errorMessage", "Mật khẩu mới phải có ít nhất 6 ký tự!");
+            request.getRequestDispatcher("login/changePassword.jsp").forward(request, response);
+            return;
+        }
+
+        try {
+            boolean success = accountDao.changePassword(email, oldPassword, newPassword);
+            if (success) {
+                request.setAttribute("successMessage", "Đổi mật khẩu thành công! Vui lòng đăng nhập lại.");
+                session.invalidate(); // Hủy session để yêu cầu đăng nhập lại
+                request.getRequestDispatcher("login/login.jsp").forward(request, response);
+            } else {
+                request.setAttribute("errorMessage", "Mật khẩu cũ không đúng hoặc tài khoản này không hỗ trợ đổi mật khẩu (đăng nhập bằng Google).");
+                request.getRequestDispatcher("login/changePassword.jsp").forward(request, response);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+            request.setAttribute("errorMessage", "Lỗi khi đổi mật khẩu: " + e.getMessage());
+            request.getRequestDispatcher("login/changePassword.jsp").forward(request, response);
+        }
     }
 
     private void createSession(HttpServletRequest request, String email, String role) {

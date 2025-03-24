@@ -2,7 +2,7 @@
 <%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8"%>
 <%@ taglib uri="http://java.sun.com/jsp/jstl/core" prefix="c" %>
 <%@ taglib prefix="fmt" uri="http://java.sun.com/jsp/jstl/fmt" %>
-<%@page import="jakarta.servlet.http.HttpSession, Model.Ticket, java.sql.SQLException"%> <!-- Thêm import cần thiết -->
+<%@page import="jakarta.servlet.http.HttpSession, Model.Ticket, java.sql.SQLException"%>
 <%
     HttpSession userSession = request.getSession(false);
     String userEmail = (userSession != null) ? (String) userSession.getAttribute("userEmail") : null;
@@ -18,152 +18,88 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>THVB Cinema - Giỏ hàng vé xem phim</title>
-        <link rel="stylesheet" href="css/userStyle.css">
-        <script defer src="js/userScript.js"></script>
+        <link rel="stylesheet" href="<%= request.getContextPath()%>/css/userStyle.css">
         <style>
-            /* Reset mặc định */
-            * {
-                margin: 0;
-                padding: 0;
-                box-sizing: border-box;
-                font-family: 'Poppins', Arial, sans-serif;
-            }
-
-            body {
-                background-color: #1a1a1a;
-                color: #f4e4ba;
-                line-height: 1.6;
-                font-size: 16px;
-            }
-
-            /* Navbar */
-            .navbar {
-                background: #2f2525;
-                padding: 15px 20px;
+            .shopping-cart-page {
+                background-color: #1a1a1a; /* Giữ màu nền từ userStyle.css */
+                font-family: "Courier New", Courier, monospace; /* Ghi đè font-family */
+                min-height: 100vh; /* Đảm bảo trang chiếm toàn bộ chiều cao */
                 display: flex;
-                justify-content: space-between;
-                align-items: center;
-                box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-                position: sticky;
-                top: 0;
-                z-index: 1000;
+                flex-direction: column;
             }
 
-            .navbar .logo {
-                color: #f4e4ba;
-                font-size: 24px;
-                font-weight: bold;
-                text-decoration: none;
-                transition: color 0.3s ease;
+            /* Container chính */
+            .shopping-cart-page .cart-container {
+                flex: 1;
+                padding: 40px 20px;
+                max-width: 1200px;
+                margin: 0 auto;
             }
 
-            .navbar .logo:hover {
-                color: #ffcc00;
-            }
-
-            .search-bar input {
-                padding: 8px 15px;
-                border: none;
-                border-radius: 20px;
-                background: #3b2f2f;
-                color: #f4e4ba;
-                font-family: "Courier New", Courier, monospace;
-                outline: none;
-                transition: all 0.3s ease;
-            }
-
-            .search-bar input:focus {
-                background: #4a3f35;
-                box-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
-            }
-
-            /* Auth Buttons */
-            .auth-buttons {
-                display: flex;
-                align-items: center;
-                gap: 15px;
-                list-style: none;
-            }
-
-            .auth-buttons a {
-                background: linear-gradient(45deg, #ffcc00, #ff6600);
-                padding: 10px 25px;
-                border-radius: 25px;
-                text-decoration: none;
-                font-size: 14px;
-                font-weight: bold;
-                color: #1a1a1a;
-                transition: all 0.3s ease;
-            }
-
-            .auth-buttons a:hover {
-                transform: translateY(-2px);
-                box-shadow: 0 5px 15px rgba(255, 204, 0, 0.6);
-            }
-
-            /* Nav Menu */
-            .nav-menu {
-                background: linear-gradient(90deg, #2f2525, #3b2f2f);
-                padding: 15px 20px;
-                border-bottom: 2px solid #d4af37;
-                box-shadow: 0 2px 15px rgba(0, 0, 0, 0.7);
-            }
-
-            .nav-menu ul {
-                display: flex;
-                justify-content: center;
-                gap: 40px;
-                list-style: none;
-            }
-
-            .nav-menu a {
-                color: #f4e4ba;
-                text-decoration: none;
-                font-size: 18px;
-                font-weight: bold;
-                padding: 10px 15px;
-                border-radius: 15px;
-                transition: all 0.3s ease;
-                position: relative;
-            }
-
-            .nav-menu a:hover {
-                color: #ffcc00;
-                background: rgba(212, 175, 55, 0.2);
-                box-shadow: 0 5px 10px rgba(255, 204, 0, 0.4);
-            }
-
-            .nav-menu a:hover::after {
-                content: "";
-                position: absolute;
-                width: 80%;
-                height: 2px;
-                background: #ffcc00;
-                left: 10%;
-                bottom: 5px;
+            /* Tiêu đề */
+            .shopping-cart-page h1 {
+                text-align: center;
+                font-size: 36px;
+                color: #ff6200;
+                margin-bottom: 40px;
+                text-transform: uppercase;
+                letter-spacing: 2px;
+                text-shadow: 0 0 10px rgba(255, 98, 0, 0.5);
             }
 
             /* Table Styles */
-            table {
-                width: 80%;
-                border-collapse: collapse;
-                margin: 40px auto;
+            .shopping-cart-page table {
+                width: 100%;
+                border-collapse: separate;
+                border-spacing: 0;
+                background: #2f2525;
+                border-radius: 10px;
+                overflow: hidden;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
             }
 
-            th, td {
-                border: 1px solid #4a3f35;
-                padding: 12px;
+            .shopping-cart-page th, .shopping-cart-page td {
+                border: none;
+                padding: 15px;
                 text-align: center;
                 color: #f4e4ba;
+                font-size: 15px;
             }
 
-            th {
-                background: #2f2525;
+            .shopping-cart-page th {
+                background: linear-gradient(45deg, #ff6200, #ffcc00);
+                color: #1a1a1a;
                 font-size: 16px;
+                font-weight: bold;
+                text-transform: uppercase;
             }
 
-            .button {
-                background: #d4af37;
+            .shopping-cart-page tr {
+                transition: background 0.3s ease;
+            }
+
+            .shopping-cart-page tr:nth-child(even) {
+                background: #3b2f2f;
+            }
+
+            .shopping-cart-page tr:hover {
+                background: #4a3f35;
+            }
+
+            /* Style cho thông báo giỏ hàng trống */
+            .shopping-cart-page .empty-cart {
+                font-size: 18px;
+                color: #ff6200;
+                text-align: center;
+                padding: 20px;
+                background: #2f2525;
+                border-radius: 10px;
+                margin: 20px 0;
+            }
+
+            /* Style cho nút */
+            .shopping-cart-page .button {
+                background: linear-gradient(45deg, #ff6200, #ffcc00);
                 color: #1a1a1a;
                 border: none;
                 padding: 10px 20px;
@@ -172,28 +108,62 @@
                 font-family: "Courier New", Courier, monospace;
                 font-weight: bold;
                 transition: all 0.3s ease;
+                display: inline-block;
+                text-decoration: none;
+                box-shadow: 0 5px 15px rgba(255, 98, 0, 0.3);
             }
 
-            .button:hover {
-                background: #b8860b;
+            .shopping-cart-page .button:hover {
+                background: linear-gradient(45deg, #e65c00, #b8860b);
                 transform: scale(1.05);
+                box-shadow: 0 5px 20px rgba(255, 98, 0, 0.5);
             }
 
-            /* Heading */
-            h1 {
+            /* Style cho nút "Xóa" trong bảng */
+            .shopping-cart-page .button.remove {
+                background: linear-gradient(45deg, #dc3545, #ff0000);
+                color: #fff;
+            }
+
+            .shopping-cart-page .button.remove:hover {
+                background: linear-gradient(45deg, #c82333, #cc0000);
+            }
+
+            /* Style cho container nút dưới bảng */
+            .shopping-cart-page .action-buttons {
                 text-align: center;
+                margin-top: 30px;
+                display: flex;
+                justify-content: center;
+                gap: 20px;
+            }
+
+            /* Style cho thông báo message */
+            .shopping-cart-page .message {
+                text-align: center;
+                font-size: 18px;
+                color: #28a745;
+                background: #2f2525;
+                padding: 15px;
+                border-radius: 10px;
                 margin: 20px 0;
-                font-size: 32px;
+                box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            }
+
+            /* Footer đơn giản */
+            .shopping-cart-page footer {
+                background: #2c2c2c;
+                padding: 15px;
+                text-align: center;
+                color: #f4e4ba;
+                font-size: 14px;
             }
         </style>
     </head>
-    <body>
+    <body class="shopping-cart-page">
         <header>
             <div class="navbar">
                 <a href="<%= request.getContextPath()%>/" class="logo">THVB Cinema</a>
-                <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="Search movies...">
-                </div>
                 <nav>
                     <ul class="auth-buttons">
                         <% if (userEmail != null) {%>
@@ -212,75 +182,87 @@
                 <li><a href="<%= request.getContextPath()%>/">Home</a></li>
                 <li><a href="<%= request.getContextPath()%>/Movie.jsp">Movie</a></li>
                 <li><a href="<%= request.getContextPath()%>/TV_Series.jsp">TV Series</a></li>
-                <li><a href="<%= request.getContextPath()%>/manager/shoppingCart.jsp">Cart</a></li>
+                <li><a href="<%= request.getContextPath()%>/cart">Cart</a></li>
+                <li><a href="<%= request.getContextPath()%>/cart?action=history">Booking History</a></li>
             </ul>
         </div>
 
-        <h1 style="text-align: center;">Giỏ hàng vé xem phim</h1>
+        <div class="cart-container">
+            <h1>Giỏ hàng vé xem phim</h1>
 
-        <table>
-            <tr>
-                <th>Mã vé</th>
-                <th>Tên phim</th>
-                <th>Mã suất chiếu</th>
-                <th>Email khách hàng</th>
-                <th>Số ghế</th>
-                <th>Thời gian đặt</th>
-                <th>Trạng thái</th>
-                <th>Số lượng</th>
-                <th>Hành động</th>
-            </tr>
-            <c:if test="${not empty sessionScope.cart}">
-                <c:forEach var="ticket" items="${sessionScope.cart}">
-                    <%
-                        // Truy cập ticket từ pageContext
-                        Ticket ticketObj = (Ticket) pageContext.getAttribute("ticket");
-                        String customerId = (ticketObj != null) ? ticketObj.getCustomerID() : "";
-                        CustomerDao customerDao = new CustomerDao();
-                        String email = null;
-                        try {
-                            email = customerDao.getEmailByCustomerId(customerId);
-                        } catch (SQLException e) {
-                            e.printStackTrace();
-                        }
-                        if (email == null) {
-                            email = "Không tìm thấy email";
-                        }
-                        pageContext.setAttribute("email", email);
-                    %>
-                    <tr>
-                        <td>${ticket.ticketID}</td>
-                        <td>
-                            <c:forEach var="movie" items="${applicationScope.movieList}">
-                                <c:if test="${movie.movieID == ticket.movieID}">
-                                    ${movie.movieTitle}
-                                </c:if>
-                            </c:forEach>
-                        </td>
-                        <td>${ticket.showTimeID}</td>
-                        <td>${email}</td>
-                        <td>${ticket.seatNumber}</td>
-                        <td>
-                            <fmt:formatDate value="${ticket.bookingTime}" pattern="dd/MM/yyyy HH:mm:ss"/>
-                        </td>
-                        <td>${ticket.status}</td>
-                        <td>${ticket.quantity}</td>
-                        <td>
-                            <a href="cart?action=remove&ticketID=${ticket.ticketID}" class="button">Xóa</a>
-                        </td>
-                    </tr>
-                </c:forEach>
+            <c:if test="${not empty param.message}">
+                <p class="message">${param.message}</p>
             </c:if>
-            <c:if test="${empty sessionScope.cart}">
+
+            <table>
                 <tr>
-                    <td colspan="9">Giỏ hàng của bạn hiện đang trống.</td>
+                    <th>Mã vé</th>
+                    <th>Tên phim</th>
+                    <th>Mã suất chiếu</th>
+                    <th>Email khách hàng</th>
+                    <th>Số ghế</th>
+                    <th>Thời gian đặt</th>
+                    <th>Trạng thái</th>
+                    <th>Số lượng</th>
+                    <th>Hành động</th>
                 </tr>
-            </c:if>
-        </table>
+                <c:if test="${not empty sessionScope.cart}">
+                    <c:forEach var="ticket" items="${sessionScope.cart}">
+                        <%
+                            Ticket ticketObj = (Ticket) pageContext.getAttribute("ticket");
+                            String customerId = (ticketObj != null) ? ticketObj.getCustomerID() : "";
+                            CustomerDao customerDao = new CustomerDao();
+                            String email = null;
+                            try {
+                                email = customerDao.getEmailByCustomerId(customerId);
+                            } catch (SQLException e) {
+                                e.printStackTrace();
+                            }
+                            if (email == null) {
+                                email = "Không tìm thấy email";
+                            }
+                            pageContext.setAttribute("email", email);
+                        %>
+                        <tr>
+                            <td>${ticket.ticketID}</td>
+                            <td>
+                                <c:forEach var="movie" items="${applicationScope.movieList}">
+                                    <c:if test="${movie.movieID == ticket.movieID}">
+                                        ${movie.movieTitle}
+                                    </c:if>
+                                </c:forEach>
+                            </td>
+                            <td>${ticket.showTimeID}</td>
+                            <td>${email}</td>
+                            <td>${ticket.seatNumber}</td>
+                            <td>
+                                <fmt:formatDate value="${ticket.bookingTime}" pattern="dd/MM/yyyy HH:mm:ss"/>
+                            </td>
+                            <td>${ticket.status}</td>
+                            <td>${ticket.quantity}</td>
+                            <td>
+                                <a href="cart?action=remove&ticketID=${ticket.ticketID}" class="button remove">Xóa</a>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </c:if>
+                <c:if test="${empty sessionScope.cart}">
+                    <tr>
+                        <td colspan="9" class="empty-cart">Giỏ hàng của bạn hiện đang trống.</td>
+                    </tr>
+                </c:if>
+            </table>
 
-        <div style="text-align: center; margin-top: 20px;">
-            <a href="cart?action=clear" class="button">Xóa toàn bộ giỏ hàng</a>
-            <a href="<%= request.getContextPath()%>/checkout" class="button">Thanh toán</a>
+            <div class="action-buttons">
+                <c:if test="${not empty sessionScope.cart}">
+                    <a href="<%= request.getContextPath()%>/checkout" class="button">Thanh toán qua VNPay</a>
+                </c:if>
+                <a href="cart?action=clear" class="button">Xóa toàn bộ giỏ hàng</a>
+            </div>
         </div>
+
+        <footer>
+            <p>© 2025 THVB Cinema. All rights reserved.</p>
+        </footer>
     </body>
 </html>

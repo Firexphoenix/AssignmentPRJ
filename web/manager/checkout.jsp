@@ -15,115 +15,220 @@
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>THVB Cinema - Thanh toán</title>
+        <title>THVB Cinema - Kết quả thanh toán</title>
         <link rel="stylesheet" href="css/userStyle.css">
-        <script defer src="js/userScript.js"></script>
+        <!-- Thêm Font Awesome để sử dụng icon -->
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
         <style>
-            body {
-                background-color: #000;
-                color: #f4e4ba;
-                font-family: "Courier New", Courier, monospace;
-                margin: 0;
-                padding: 0;
-            }
-            .navbar {
-                background: #3b2f2f;
-                padding: 10px 20px;
+            .payment-result-page {
+                background-color: #000; /* Ghi đè background-color từ userStyle.css */
+                font-family: "Courier New", Courier, monospace; /* Ghi đè font-family từ userStyle.css */
+                min-height: 100vh; /* Đảm bảo trang chiếm toàn bộ chiều cao màn hình */
                 display: flex;
+                flex-direction: column;
                 justify-content: space-between;
-                align-items: center;
             }
-            .navbar .logo {
-                color: #ff6200;
-                font-size: 24px;
-                font-weight: bold;
-                text-decoration: none;
+
+            .payment-result-page .navbar {
+                background: #3b2f2f; /* Ghi đè nếu cần */
+                padding: 10px 20px; /* Ghi đè padding */
             }
-            .search-bar input {
-                padding: 5px 10px;
-                border: none;
-                border-radius: 20px;
-                outline: none;
-                background-color: #fff;
-                color: #000;
-                width: 200px;
+
+            .payment-result-page .navbar .logo {
+                color: #ff6200; /* Ghi đè màu logo */
             }
-            .auth-buttons {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                list-style: none;
-                padding: 0;
-                margin: 0;
+
+            .payment-result-page .nav-menu {
+                background: #2c2c2c; /* Ghi đè background */
+                padding: 10px 0; /* Ghi đè padding */
             }
-            .auth-buttons li {
-                list-style: none;
+
+            .payment-result-page .nav-menu ul {
+                gap: 20px; /* Ghi đè gap */
             }
-            .auth-buttons a {
+
+            .payment-result-page .nav-menu a:hover {
+                color: #ff6200; /* Ghi đè màu hover */
+            }
+
+            .payment-result-page .auth-buttons {
+                gap: 10px; /* Ghi đè gap */
+            }
+
+            .payment-result-page .auth-buttons a {
                 background: #ff6200;
                 padding: 10px 20px;
                 border-radius: 5px;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 14px;
-                font-weight: bold;
                 color: black;
+            }
+
+            .payment-result-page .auth-buttons a:hover {
+                background: #e65c00;
+                transform: none; /* Bỏ hiệu ứng transform từ userStyle.css */
+                box-shadow: none; /* Bỏ hiệu ứng box-shadow từ userStyle.css */
+            }
+
+            /* Container chính để căn giữa nội dung */
+            .payment-result-page .result-container {
+                flex: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                text-align: center;
+                padding: 40px 20px;
+                background: radial-gradient(circle, rgba(255, 98, 0, 0.1) 0%, rgba(0, 0, 0, 0.8) 100%); /* Gradient nền nhẹ */
+            }
+
+            /* Style cho thông báo */
+            .payment-result-page .message {
+                background: #1a1a1a;
+                padding: 40px;
+                border-radius: 15px;
+                max-width: 600px;
+                width: 100%;
+                position: relative;
+                overflow: hidden;
+                animation: slideIn 0.7s ease-in-out;
                 transition: all 0.3s ease;
             }
-            .auth-buttons a:hover {
-                background: #e65c00;
+
+            /* Hiệu ứng slide-in */
+            @keyframes slideIn {
+                from {
+                    opacity: 0;
+                    transform: translateY(50px);
+                }
+                to {
+                    opacity: 1;
+                    transform: translateY(0);
+                }
             }
-            .nav-menu {
-                background: #2c2c2c;
-                padding: 10px 0;
-                text-align: center;
+
+            /* Viền gradient cho thông báo */
+            .payment-result-page .message::before {
+                content: '';
+                position: absolute;
+                top: -2px;
+                left: -2px;
+                right: -2px;
+                bottom: -2px;
+                background: linear-gradient(45deg, #ff6200, #28a745, #dc3545, #ff6200);
+                z-index: -1;
+                border-radius: 17px;
+                animation: gradientBorder 5s infinite linear;
             }
-            .nav-menu ul {
-                list-style: none;
-                padding: 0;
-                margin: 0;
-                display: flex;
-                justify-content: center;
-                gap: 20px;
+
+            /* Hiệu ứng gradient cho viền */
+            @keyframes gradientBorder {
+                0% {
+                    background-position: 0% 50%;
+                }
+                100% {
+                    background-position: 400% 50%;
+                }
             }
-            .nav-menu a {
+
+            /* Hiệu ứng glow khi hover */
+            .payment-result-page .message:hover {
+                box-shadow: 0 0 20px rgba(255, 98, 0, 0.5);
+            }
+
+            /* Style cho icon */
+            .payment-result-page .message .icon {
+                font-size: 70px; /* Tăng kích thước icon */
+                margin-bottom: 25px;
+                animation: bounce 0.5s ease;
+            }
+
+            /* Hiệu ứng bounce cho icon */
+            @keyframes bounce {
+                0%, 20%, 50%, 80%, 100% {
+                    transform: translateY(0);
+                }
+                40% {
+                    transform: translateY(-20px);
+                }
+                60% {
+                    transform: translateY(-10px);
+                }
+            }
+
+            .payment-result-page .message .success .icon {
+                color: #28a745; /* Màu xanh lá cho thành công */
+            }
+
+            .payment-result-page .message .error .icon {
+                color: #dc3545; /* Màu đỏ cho lỗi */
+            }
+
+            /* Style cho tiêu đề */
+            .payment-result-page .message h1 {
+                font-size: 32px; /* Tăng kích thước tiêu đề */
+                margin-bottom: 20px;
+                text-transform: uppercase; /* Chữ in hoa */
+                letter-spacing: 2px; /* Tăng khoảng cách giữa các chữ */
+            }
+
+            .payment-result-page .message .success h1 {
+                color: #28a745;
+                text-shadow: 0 0 10px rgba(40, 167, 69, 0.5); /* Hiệu ứng ánh sáng */
+            }
+
+            .payment-result-page .message .error h1 {
+                color: #dc3545;
+                text-shadow: 0 0 10px rgba(220, 53, 69, 0.5); /* Hiệu ứng ánh sáng */
+            }
+
+            /* Style cho đoạn văn */
+            .payment-result-page .message p {
+                font-size: 18px; /* Tăng kích thước chữ */
+                margin-bottom: 30px;
                 color: #f4e4ba;
-                text-decoration: none;
-                font-weight: bold;
+                line-height: 1.5; /* Tăng khoảng cách dòng */
             }
-            .nav-menu a:hover {
-                color: #ff6200;
+
+            .payment-result-page .message .error p {
+                color: #ff0000;
             }
-            .button {
-                background: #d4af37;
-                color: black;
+
+            /* Style cho nút quay lại */
+            .payment-result-page .button {
+                background: #ff6200;
+                color: #fff;
                 border: none;
-                padding: 10px 15px;
+                padding: 12px 30px;
+                border-radius: 25px;
                 cursor: pointer;
-                transition: background 0.3s ease;
+                transition: all 0.3s ease;
                 font-family: "Courier New", Courier, monospace;
                 text-decoration: none;
                 display: inline-block;
+                font-size: 16px;
+                font-weight: bold;
+                box-shadow: 0 5px 15px rgba(255, 98, 0, 0.3);
             }
-            .button:hover {
-                background: #b8860b;
+
+            .payment-result-page .button:hover {
+                background: #e65c00;
+                transform: scale(1.05);
+                box-shadow: 0 5px 20px rgba(255, 98, 0, 0.5);
             }
-            .message {
+
+            /* Footer đơn giản */
+            .payment-result-page footer {
+                background: #2c2c2c;
+                padding: 15px;
                 text-align: center;
-                margin: 20px;
-            }
-            .error {
-                color: #ff0000;
+                color: #f4e4ba;
+                font-size: 14px;
             }
         </style>
     </head>
-    <body>
+    <body class="payment-result-page">
         <header>
             <div class="navbar">
                 <a href="<%= request.getContextPath()%>/" class="logo">THVB Cinema</a>
-                <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="Search movies...">
-                </div>
                 <nav>
                     <ul class="auth-buttons">
                         <% if (userEmail != null) {%>
@@ -140,25 +245,34 @@
         <div class="nav-menu">
             <ul>
                 <li><a href="<%= request.getContextPath()%>/">Home</a></li>
-                <li><a href="#">Movies</a></li>
-                <li><a href="#">Showtimes</a></li>
-                <li><a href="#">Contact</a></li>
                 <li><a href="<%= request.getContextPath()%>/cart?action=view">Cart</a></li>
             </ul>
         </div>
 
-        <div class="message">
-            <c:choose>
-                <c:when test="${paymentSuccess}">
-                    <h1>Thanh toán thành công!</h1>
-                    <p>Cảm ơn bạn đã đặt vé. Vui lòng kiểm tra email để xem chi tiết.</p>
-                </c:when>
-                <c:otherwise>
-                    <h1 class="error">Thanh toán thất bại</h1>
-                    <p class="error">${errorMessage}</p>
-                </c:otherwise>
-            </c:choose>
-            <a href="<%= request.getContextPath()%>/" class="button">Quay lại trang chủ</a>
+        <div class="result-container">
+            <div class="message">
+                <c:choose>
+                    <c:when test="${paymentSuccess}">
+                        <div class="success">
+                            <i class="fas fa-check-circle icon"></i>
+                            <h1>Thanh toán thành công!</h1>
+                            <p>Cảm ơn bạn đã đặt vé. Vui lòng kiểm tra email để xem chi tiết.</p>
+                        </div>
+                    </c:when>
+                    <c:otherwise>
+                        <div class="error">
+                            <i class="fas fa-times-circle icon"></i>
+                            <h1>Thanh toán thất bại</h1>
+                            <p>${errorMessage}</p>
+                        </div>
+                    </c:otherwise>
+                </c:choose>
+                <a href="<%= request.getContextPath()%>/" class="button">Quay lại trang chủ</a>
+            </div>
         </div>
+
+        <footer>
+            <p>© 2025 THVB Cinema. All rights reserved.</p>
+        </footer>
     </body>
 </html>

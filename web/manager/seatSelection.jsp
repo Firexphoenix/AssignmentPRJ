@@ -27,64 +27,20 @@
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>THVB Cinema - Chọn ghế</title>
-        <link rel="stylesheet" href="css/userStyle.css">
-        <script defer src="js/userScript.js"></script>
+        <link rel="stylesheet" href="<%= request.getContextPath()%>/css/userStyle.css">
+        <script defer src="<%= request.getContextPath()%>/js/userScript.js"></script>
         <style>
-            body {
+            .select-seats-page {
                 background-color: #2c2c2c;
-                color: #f4e4ba;
                 font-family: "Courier New", Courier, monospace;
-                margin: 0;
-                padding: 0;
             }
-            .navbar, .nav-menu {
+
+            .select-seats-page .navbar,
+            .select-seats-page .nav-menu {
                 background: #3b2f2f;
             }
-            .navbar a, .nav-menu a {
-                color: #f4e4ba;
-            }
-            .search-bar input {
-                padding: 8px 15px;
-                border: none;
-                border-radius: 20px;
-                background: #3b2f2f;
-                color: #f4e4ba;
-                font-family: "Courier New", Courier, monospace;
-                outline: none;
-                transition: all 0.3s ease;
-            }
-            .search-bar input:focus {
-                background: #4a3f35;
-                box-shadow: 0 0 5px rgba(255, 204, 0, 0.5);
-            }
-            .auth-buttons {
-                display: flex;
-                align-items: center;
-                gap: 10px;
-                list-style: none;
-                padding: 0;
-                margin: 0;
-            }
-            .auth-buttons li {
-                list-style: none;
-            }
-            .auth-buttons a {
-                background: linear-gradient(45deg, #ffcc00, #ff6600);
-                font-family: "Courier New", Courier, monospace;
-                padding: 10px 20px;
-                border-radius: 8px;
-                text-decoration: none;
-                display: inline-block;
-                font-size: 14px;
-                font-weight: bold;
-                color: black;
-                transition: all 0.3s ease;
-            }
-            .auth-buttons a:hover {
-                transform: scale(1.05);
-                box-shadow: 0px 4px 10px rgba(255, 204, 0, 0.6);
-            }
-            .screen {
+
+            .select-seats-page .screen {
                 background: repeating-linear-gradient(45deg, #444, #444 10px, #555 10px, #555 20px);
                 height: 20px;
                 margin: 20px auto;
@@ -92,7 +48,8 @@
                 line-height: 20px;
                 font-weight: bold;
             }
-            .seat-grid {
+
+            .select-seats-page .seat-grid {
                 display: grid;
                 grid-template-columns: repeat(12, 40px);
                 gap: 2px;
@@ -100,7 +57,8 @@
                 margin: 20px auto;
                 width: fit-content;
             }
-            .seat {
+
+            .select-seats-page .seat {
                 width: 40px;
                 height: 40px;
                 background-color: #666;
@@ -111,41 +69,50 @@
                 border-radius: 5px;
                 font-size: 14px;
             }
-            .seat.selected {
+
+            .select-seats-page .seat.selected {
                 background-color: #ff6200;
             }
-            .seat.booked {
+
+            .select-seats-page .seat.booked {
                 background-color: #999;
                 cursor: not-allowed;
             }
-            .row-label {
+
+            .select-seats-page .row-label {
                 position: relative;
                 top: 10px;
                 left: -10px;
                 font-weight: bold;
             }
-            .note {
+
+            .select-seats-page .note {
                 margin: 20px 0;
                 font-size: 14px;
                 text-align: center;
             }
-            .note span {
+
+            .select-seats-page .note span {
                 display: inline-block;
                 width: 20px;
                 height: 20px;
                 margin-right: 5px;
                 vertical-align: middle;
             }
-            .note .available {
+
+            .select-seats-page .note .available {
                 background-color: #666;
             }
-            .note .selected {
+
+            .select-seats-page .note .selected {
                 background-color: #ff6200;
             }
-            .note .booked {
+
+            .select-seats-page .note .booked {
                 background-color: #999;
             }
-            .confirm-btn {
+
+            .select-seats-page .confirm-btn {
                 background: #d4af37;
                 color: black;
                 border: none;
@@ -155,8 +122,28 @@
                 font-family: "Courier New", Courier, monospace;
                 margin: 20px;
             }
-            .confirm-btn:hover {
+
+            .select-seats-page .confirm-btn:hover {
                 background: #b8860b;
+            }
+
+            /* Thêm style để căn giữa showTime */
+            .showtime-container {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin: 20px 0;
+                padding: 0 20px;
+            }
+
+            .showtime-selection {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+            }
+
+            .max-seats-info {
+                font-size: 14px;
             }
         </style>
         <script>
@@ -243,7 +230,6 @@
 
                 document.getElementById('showTime').addEventListener('change', updateBookedSeats);
 
-                // Đặt giá trị mặc định cho dropdown nếu showTimeId tồn tại
                 const showTimeId = "${showTimeId}";
                 if (showTimeId) {
                     document.getElementById('showTime').value = showTimeId;
@@ -251,13 +237,10 @@
             };
         </script>
     </head>
-    <body>
+    <body class="select-seats-page">
         <header>
             <div class="navbar">
                 <a href="<%= request.getContextPath()%>/" class="logo">THVB Cinema</a>
-                <div class="search-bar">
-                    <input type="text" id="search-input" placeholder="Search movies...">
-                </div>
                 <nav>
                     <ul class="auth-buttons">
                         <% if (userEmail != null) {%>
@@ -276,21 +259,27 @@
                 <li><a href="<%= request.getContextPath()%>/">Home</a></li>
                 <li><a href="<%= request.getContextPath()%>/Movie.jsp">Movie</a></li>
                 <li><a href="<%= request.getContextPath()%>/TV_Series.jsp">TV Series</a></li>
-                <li><a href="<%= request.getContextPath()%>/manager/shoppingCart.jsp">Cart</a></li>
+                <li><a href="<%= request.getContextPath()%>/cart">Cart</a></li>
+                <li><a href="<%= request.getContextPath()%>/cart?action=history">Booking History</a></li>
             </ul>
         </div>
 
         <h1 style="text-align: center;">Chọn ghế</h1>
-        <label>Chọn suất chiếu: </label>
-        <select id="showTime">
-            <option value="">-- Chọn suất chiếu --</option>
-            <c:forEach var="showtime" items="${showtimeList}">
-                <option value="${showtime.showTimeID}">
-                    <fmt:formatDate value="${showtime.startTime}" pattern="dd/MM/yyyy HH:mm"/> - Phòng ${showtime.roomID}
-                </option>
-            </c:forEach>
-        </select>
-        <span style="float: right;">Cỡ thể chọn tối đa 8 người (Max: 8)</span>
+
+        <div class="showtime-container">
+            <div class="showtime-selection">
+                <label>Chọn suất chiếu: </label>
+                <select id="showTime">
+                    <option value="">-- Chọn suất chiếu --</option>
+                    <c:forEach var="showtime" items="${showtimeList}">
+                        <option value="${showtime.showTimeID}">
+                            <fmt:formatDate value="${showtime.startTime}" pattern="dd/MM/yyyy HH:mm"/> - Phòng ${showtime.roomID}
+                        </option>
+                    </c:forEach>
+                </select>
+            </div>
+            <span class="max-seats-info">Cỡ thể chọn tối đa 8 người (Max: 8)</span>
+        </div>
 
         <c:if test="${not empty error}">
             <p style="text-align: center; color: #ff0000;">${error}</p>

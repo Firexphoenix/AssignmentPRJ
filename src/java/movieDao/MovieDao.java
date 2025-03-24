@@ -101,4 +101,62 @@ public class MovieDao {
         }
         return movieList;
     }
+
+    // Thêm phim mới
+    public boolean addMovie(Movie movie) throws SQLException {
+        String sql = "INSERT INTO Movie (MovieID, MovieTitle, MovieGenre, ReleaseDate, Director, MovieDuration, Language) VALUES (?, ?, ?, ?, ?, ?, ?)";
+        try (Connection conn = DBconnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, movie.getMovieID());
+            stmt.setString(2, movie.getMovieTitle());
+            stmt.setString(3, movie.getMovieGenre());
+            stmt.setDate(4, movie.getReleaseDate() != null ? new java.sql.Date(movie.getReleaseDate().getTime()) : null);
+            stmt.setString(5, movie.getDirector());
+            stmt.setInt(6, movie.getMovieDuration());
+            stmt.setString(7, movie.getLanguage());
+            int rowsInserted = stmt.executeUpdate();
+            return rowsInserted > 0;
+        }
+    }
+
+    // Cập nhật phim
+    public boolean updateMovie(Movie movie) throws SQLException {
+        String sql = "UPDATE Movie SET MovieTitle = ?, MovieGenre = ?, ReleaseDate = ?, Director = ?, MovieDuration = ?, Language = ? WHERE MovieID = ?";
+        try (Connection conn = DBconnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, movie.getMovieTitle());
+            stmt.setString(2, movie.getMovieGenre());
+            stmt.setDate(3, movie.getReleaseDate() != null ? new java.sql.Date(movie.getReleaseDate().getTime()) : null);
+            stmt.setString(4, movie.getDirector());
+            stmt.setInt(5, movie.getMovieDuration());
+            stmt.setString(6, movie.getLanguage());
+            stmt.setString(7, movie.getMovieID());
+            int rowsUpdated = stmt.executeUpdate();
+            return rowsUpdated > 0;
+        }
+    }
+
+    // Xóa phim
+    public boolean deleteMovie(String movieId) throws SQLException {
+        String sql = "DELETE FROM Movie WHERE MovieID = ?";
+        try (Connection conn = DBconnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, movieId);
+            int rowsDeleted = stmt.executeUpdate();
+            return rowsDeleted > 0;
+        }
+    }
+
+    // Tạo MovieID mới
+    public String generateNewMovieID() throws SQLException {
+        String sql = "SELECT MAX(MovieID) AS MaxID FROM Movie";
+        try (Connection conn = DBconnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                String maxID = rs.getString("MaxID");
+                if (maxID == null) {
+                    return "MV001";
+                }
+                int num = Integer.parseInt(maxID.substring(2)) + 1;
+                return String.format("MV%03d", num);
+            }
+            return "MV001";
+        }
+    }
 }

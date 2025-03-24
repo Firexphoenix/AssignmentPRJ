@@ -84,14 +84,6 @@
                     <h4>Welcome, ${customer.customerName}</h4>
                 </div>
                 <div class="card-body">
-                    <c:if test="${not empty sessionScope.successMessage}">
-                        <div class="alert alert-success">
-                            ${sessionScope.successMessage}
-                            <%
-                                session.removeAttribute("successMessage");
-                            %>
-                        </div>
-                    </c:if>
                     <h5 class="text-center mb-4">Customer Information</h5>
                     <table class="table table-bordered">
                         <tr>
@@ -115,6 +107,7 @@
                         <a href="<%= request.getContextPath()%>/" class="btn btn-danger">Home</a>
                         <a href="<%= request.getContextPath()%>/customers?action=edit&id=${customer.customerID}" class="btn btn-primary">Edit Profile</a>
                         <a href="<%= request.getContextPath()%>/cart" class="btn btn-secondary">Cart</a>
+                        <a href="<%= request.getContextPath()%>/login?action=changePassword" class="btn btn-secondary">Đổi mật khẩu</a>
                         <a href="<%= request.getContextPath()%>/cart?action=history" class="btn btn-primary">Lịch sử đặt vé</a>
                         <a href="<%= request.getContextPath()%>/logout" class="btn btn-danger">Logout</a>
                     </div>

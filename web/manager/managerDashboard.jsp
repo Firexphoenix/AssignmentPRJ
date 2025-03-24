@@ -64,8 +64,10 @@
             <div class="button-group">
                 <div class="btn red"><a href="<%= request.getContextPath()%>/employees">Employee List</a></div>
                 <div class="btn red"><a href="<%= request.getContextPath()%>/report">Report</a></div>
+                <div class="btn red"><a href="<%= request.getContextPath()%>/login?action=changePassword">Đổi mật khẩu</a></div>
+                <div class="btn red"><a href="<%= request.getContextPath()%>/cart?action=adminHistory">Ticket History</a></div>
+                <div class="btn red"><a href="<%= request.getContextPath()%>/movies">Movies List</a></div>
                 <div class="btn red"><a href="<%= request.getContextPath()%>/">Home</a></div>
-                <div class="btn red"><a href="<%= request.getContextPath()%>/cart?action=history">Lịch sử đặt vé</a></div>
                 <div class="btn red"><a href="<%= request.getContextPath()%>/logout">Logout</a></div>
             </div>
         </div>

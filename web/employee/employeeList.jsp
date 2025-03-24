@@ -51,6 +51,15 @@
                 background-color: #ff5722;
                 color: #fff;
             }
+            .search-bar {
+                margin: 20px 0;
+            }
+            .search-bar input {
+                width: 300px;
+                padding: 8px;
+                border-radius: 5px;
+                border: 1px solid #ccc;
+            }
         </style>
     </head>
     <body>
@@ -58,10 +67,13 @@
             <div class="text-center mb-4">
                 <h1>Employee Management</h1>
                 <a href="employees?action=create" class="btn btn-primary">Add New Employee</a>
+                <div class="search-bar">
+                    <input type="text" id="search-input" placeholder="Search employees..." onkeyup="searchEmployees()">
+                </div>
             </div>
 
             <div class="table-responsive">
-                <table class="table table-striped table-hover table-bordered">
+                <table class="table table-striped table-hover table-bordered" id="employee-table">
                     <caption><h2>List of Employees</h2></caption>
                     <thead>
                         <tr>
@@ -100,6 +112,7 @@
                     </tbody>
                 </table>
                 <div class="text-center mt-3">
+                    <a href="<%= request.getContextPath()%>/manager/managerDashboard.jsp" class="btn btn-secondary">Back</a>
                     <a href="<%= request.getContextPath()%>/" class="btn btn-secondary">Home</a>
                 </div>
             </div>
@@ -107,5 +120,32 @@
 
         <!-- Bootstrap JS -->
         <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+        <!-- JavaScript for Search Functionality -->
+        <script>
+            function searchEmployees() {
+                // Lấy giá trị từ ô tìm kiếm
+                let input = document.getElementById("search-input").value.toLowerCase();
+                let table = document.getElementById("employee-table");
+                let rows = table.getElementsByTagName("tr");
+
+                // Duyệt qua tất cả các hàng trong bảng (bỏ qua hàng tiêu đề)
+                for (let i = 1; i < rows.length; i++) {
+                    let cells = rows[i].getElementsByTagName("td");
+                    let match = false;
+
+                    // Duyệt qua tất cả các cột trong hàng (trừ cột Actions)
+                    for (let j = 0; j < cells.length - 1; j++) {
+                        let cellText = cells[j].textContent || cells[j].innerText;
+                        if (cellText.toLowerCase().indexOf(input) > -1) {
+                            match = true;
+                            break;
+                        }
+                    }
+
+                    // Hiển thị hoặc ẩn hàng dựa trên kết quả tìm kiếm
+                    rows[i].style.display = match ? "" : "none";
+                }
+            }
+        </script>
     </body>
 </html>

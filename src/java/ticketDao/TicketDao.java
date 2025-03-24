@@ -122,4 +122,32 @@ public class TicketDao {
         }
         return ticketHistory;
     }
+
+    public List<Ticket> getAllTicketHistory() throws SQLException {
+        List<Ticket> ticketHistory = new ArrayList<>();
+        String sql = "SELECT * FROM Ticket ORDER BY BookingTime DESC";
+        try (Connection conn = DBconnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql); ResultSet rs = stmt.executeQuery()) {
+            while (rs.next()) {
+                Ticket ticket = new Ticket();
+                ticket.setTicketID(rs.getString("TicketID"));
+                ticket.setShowTimeID(rs.getString("ShowTimeID"));
+                ticket.setCustomerID(rs.getString("CustomerID"));
+                ticket.setSeatNumber(rs.getString("SeatNumber"));
+                ticket.setBookingTime(rs.getTimestamp("BookingTime"));
+                ticket.setStatus(rs.getString("Status"));
+                ticket.setMovieID(rs.getString("MovieID"));
+                ticket.setQuantity(rs.getInt("Quantity"));
+                ticketHistory.add(ticket);
+            }
+        }
+        return ticketHistory;
+    }
+
+    public void deleteTicket(String ticketId) throws SQLException {
+        String sql = "DELETE FROM Ticket WHERE TicketID = ?";
+        try (Connection conn = DBconnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, ticketId);
+            stmt.executeUpdate();
+        }
+    }
 }
