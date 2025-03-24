@@ -316,7 +316,7 @@
     <body>
         <header>
             <div class="navbar">
-                <a href="<%= request.getContextPath()%>/" class="logo">THVBCINEMA</a>
+                <a href="<%= request.getContextPath()%>/" class="logo">THVB Cinema</a>
                 <div class="search-bar">
                     <input type="text" id="search-input" placeholder="Search series...">
                 </div>

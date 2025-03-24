@@ -1,8 +1,6 @@
 package Controller;
 
 import Model.Account;
-import Model.Customer;
-import Model.GoogleAccount;
 import accountDao.AccountDao;
 import customerDao.CustomerDao;
 import java.io.IOException;
@@ -12,7 +10,6 @@ import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.sql.Connection;
 import java.sql.SQLException;
 import listener.SessionCounterListener;
 
@@ -21,122 +18,11 @@ public class LoginServlet extends HttpServlet {
 
     private static final long serialVersionUID = 1L;
     private AccountDao accountDao;
-    private CustomerDao customerDao;
 
     @Override
     public void init() {
         accountDao = new AccountDao();
-        customerDao = new CustomerDao();
-    }
-
-    protected void processRequest(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        response.setContentType("text/html;charset=UTF-8");
-
-        String code = request.getParameter("code");
-        if (code == null || code.isEmpty()) {
-            System.out.println("No OAuth code received, redirecting to login page.");
-            response.sendRedirect("login/login.jsp");
-            return;
-        }
-
-        String accessToken;
-        try {
-            accessToken = GoogleLogin.getToken(code);
-            System.out.println("Google Access Token: " + accessToken);
-        } catch (IOException e) {
-            System.out.println("Error getting Google token: " + e.getMessage());
-            response.sendRedirect("login/login.jsp");
-            return;
-        }
-
-        GoogleAccount googleAccount;
-        try {
-            googleAccount = GoogleLogin.getUserInfo(accessToken);
-            System.out.println("Google OAuth Code: " + code);
-            System.out.println("Google User Info: " + googleAccount);
-        } catch (IOException e) {
-            System.out.println("Error getting Google user info: " + e.getMessage());
-            response.sendRedirect("login/login.jsp");
-            return;
-        }
-
-        if (googleAccount == null) {
-            System.out.println("GoogleAccount is null, redirecting to login page.");
-            response.sendRedirect("login/login.jsp");
-            return;
-        }
-
-        Account account = accountDao.getAccountByEmail(googleAccount.getEmail());
-        Customer customer = customerDao.getCustomerByEmail(googleAccount.getEmail());
-
-        Connection conn = null;
-        try {
-            conn = dao.DBconnection.getConnection();
-            conn.setAutoCommit(false); // Bắt đầu giao dịch
-            System.out.println("Database connection established.");
-
-            // Nếu tài khoản chưa tồn tại, thêm mới vào Account
-            if (account == null) {
-                System.out.println("Account not found, creating new account: " + googleAccount.getEmail());
-                account = new Account(googleAccount.getEmail(), null, "Customer"); // Đặt password là null
-                boolean accountInserted = accountDao.insertAccount(account, conn);
-                if (!accountInserted) {
-                    throw new SQLException("Failed to insert account into database.");
-                }
-            } else {
-                System.out.println("Account already exists: " + googleAccount.getEmail());
-            }
-
-            // Nếu khách hàng chưa tồn tại, thêm mới vào Customer
-            if (customer == null) {
-                System.out.println("Customer not found, creating new customer: " + googleAccount.getEmail());
-                String newCustomerID = customerDao.generateNewCustomerID(conn);
-                System.out.println("Generated new CustomerID: " + newCustomerID);
-                customer = new Customer();
-                customer.setCustomerID(newCustomerID);
-                customer.setCustomerName(googleAccount.getName());
-                customer.setEmail(googleAccount.getEmail());
-                customer.setPhoneNumber("000000000000"); // Giá trị mặc định
-                customer.setBirthday(null);
-                customer.setGender("Nam"); // Giá trị mặc định hợp lệ
-
-                boolean customerInserted = customerDao.insertGoogleCustomer(customer, conn);
-                if (!customerInserted) {
-                    throw new SQLException("Failed to insert customer into database.");
-                }
-            } else {
-                System.out.println("Customer already exists: " + googleAccount.getEmail());
-            }
-
-            conn.commit(); // Commit giao dịch
-            System.out.println("✔ Google Login successful: " + googleAccount.getEmail() + ", CustomerID: " + customer.getCustomerID());
-        } catch (SQLException e) {
-            if (conn != null) {
-                try {
-                    conn.rollback(); // Rollback nếu có lỗi
-                    System.out.println("❌ Transaction rolled back: " + e.getMessage());
-                } catch (SQLException ex) {
-                    ex.printStackTrace();
-                }
-            }
-            e.printStackTrace();
-            response.sendRedirect("login/login.jsp");
-            return;
-        } finally {
-            if (conn != null) {
-                try {
-                    conn.close();
-                    System.out.println("Database connection closed.");
-                } catch (SQLException e) {
-                    e.printStackTrace();
-                }
-            }
-        }
-
-        createSession(request, account.getEmail(), account.getRole());
-        System.out.println("Session created for: " + googleAccount.getEmail());
-        redirectToDashboard(request.getSession(), response);
+        CustomerDao customerDao = new CustomerDao();
     }
 
     @Override
