@@ -82,6 +82,11 @@ public class CheckoutServlet extends HttpServlet {
                     errorMessage = "Ghế " + ticket.getSeatNumber() + " đã được đặt bởi người khác. Vui lòng chọn lại ghế.";
                     break;
                 }
+
+                // Kiểm tra xem ticket đã được lưu vào database chưa
+                if (!ticketDao.isTicketIdExists(ticket.getTicketID())) {
+                    ticketDao.insertTicket(ticket); // Lưu lại nếu chưa tồn tại
+                }
             }
 
             // Nếu không có lỗi, tiến hành chuẩn bị dữ liệu để thanh toán qua VNPay
@@ -97,7 +102,7 @@ public class CheckoutServlet extends HttpServlet {
                 session.setAttribute("pendingCart", cart);
                 session.setAttribute("pendingTransactionId", transactionId);
 
-                conn.commit(); // Xác nhận giao dịch (không có thay đổi trong database)
+                conn.commit(); // Xác nhận giao dịch
 
                 // Chuyển hướng đến VNPayServlet để thanh toán
                 response.sendRedirect(request.getContextPath() + "/vnpay?action=pay&invoiceId=" + invoice.getInvoiceID() + "&amount=" + invoice.getTotal() + "&transactionId=" + transactionId);

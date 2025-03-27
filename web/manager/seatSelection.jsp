@@ -243,12 +243,28 @@
                 <a href="<%= request.getContextPath()%>/" class="logo">THVB Cinema</a>
                 <nav>
                     <ul class="auth-buttons">
-                        <% if (userEmail != null) {%>
-                        <li><a href="#"><%= userEmail%></a></li>
+                        <% if (userEmail != null && userRole != null) {
+                                String profileLink;
+                                switch (userRole.toLowerCase()) {
+                                    case "customer":
+                                        profileLink = request.getContextPath() + "/customer/customerProfile.jsp";
+                                        break;
+                                    case "manager":
+                                        profileLink = request.getContextPath() + "/manager/managerDashboard.jsp";
+                                        break;
+                                    case "employee":
+                                        profileLink = request.getContextPath() + "/employee/empDashboard.jsp";
+                                        break;
+                                    default:
+                                        profileLink = request.getContextPath() + "/";
+                                        break;
+                                }
+                        %>
+                        <li><a href="<%= profileLink%>"><%= userEmail%></a></li>
                         <li><a href="<%= request.getContextPath()%>/logout">Logout</a></li>
                             <% } else { %>
                         <li><a href="login/login.jsp">Login</a></li>
-                        <li><a href="customers?action=create">Register</a></li>
+                        <li><a href="login/register.jsp">Register</a></li>
                             <% }%>
                     </ul>
                 </nav>

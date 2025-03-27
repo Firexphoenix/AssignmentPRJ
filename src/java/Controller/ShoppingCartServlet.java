@@ -252,11 +252,21 @@ public class ShoppingCartServlet extends HttpServlet {
         for (String seat : seats) {
             String ticketID = newTicketId;
             Date bookingTime = new Date();
-            String status = "Pending";
+            String status = "Unpaid"; // Sửa từ "Pending" thành "Unpaid" để phù hợp với database
             int quantity = 1;
 
             Ticket ticket = new Ticket(ticketID, showTimeId, customerID, seat.trim(), bookingTime, status, movieId, quantity);
             cart.add(ticket);
+
+            // Lưu ticket vào database
+            try {
+                ticketDAO.insertTicket(ticket);
+            } catch (SQLException e) {
+                e.printStackTrace();
+                request.setAttribute("error", "Lỗi khi lưu vé vào cơ sở dữ liệu: " + e.getMessage());
+                selectSeats(request, response);
+                return;
+            }
 
             newTicketId = generateNextTicketId(newTicketId);
             while (ticketDAO.isTicketIdExists(newTicketId) || isTicketIdInCart(cart, newTicketId)) {

@@ -81,7 +81,7 @@
                 <a href="<%= request.getContextPath()%>/movies" class="btn red">Movies List</a>
             </div>
             <div class="center">
-                <a href="<%= request.getContextPath()%>/login?action=changePassword" class="btn red">Đổi mật khẩu</a>
+                <a href="<%= request.getContextPath()%>/login?action=changePassword" class="btn red">Change Password</a>
                 <a href="<%= request.getContextPath()%>/logout" class="btn red">Logout</a>
             </div>
         </div>

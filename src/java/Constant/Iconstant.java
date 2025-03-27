@@ -1,5 +1,7 @@
 package Constant;
+
 public class Iconstant {
+
     public static final String GOOGLE_CLIENT_ID = "906755091792-sg2ech4edan4o0i4929ng2tkaic6lpdp.apps.googleusercontent.com";
     public static final String GOOGLE_CLIENT_SECRET = "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";
     public static final String GOOGLE_REDIRECT_URI = "http://localhost:8080/CinemaTicketBooking/login";

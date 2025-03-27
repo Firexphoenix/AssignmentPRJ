@@ -1,11 +1,13 @@
 package Controller;
 
+import Model.Ticket;
 import dao.DBconnection;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jakarta.servlet.http.HttpSession;
 import java.io.IOException;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -113,8 +115,8 @@ public class VNPayServlet extends HttpServlet {
             if (fieldValue != null && !fieldValue.isEmpty()) {
                 hashData.append(fieldName).append("=").append(URLEncoder.encode(fieldValue, StandardCharsets.US_ASCII.toString()));
                 query.append(URLEncoder.encode(fieldName, StandardCharsets.UTF_8))
-                     .append("=")
-                     .append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
+                        .append("=")
+                        .append(URLEncoder.encode(fieldValue, StandardCharsets.UTF_8));
                 if (itr.hasNext()) {
                     hashData.append("&");
                     query.append("&");
@@ -177,15 +179,25 @@ public class VNPayServlet extends HttpServlet {
         String vnpTransactionNo = vnpParams.get("vnp_TransactionNo");
         String bankCode = vnpParams.get("vnp_BankCode");
 
-        // Cập nhật trạng thái giao dịch
         String transactionStatus = "Failed";
+        String ticketStatus = "Unpaid"; // Mặc định là "Unpaid"
         if ("00".equals(responseCode)) {
             transactionStatus = "Paid";
+            ticketStatus = "Paid"; // Cập nhật trạng thái ticket thành "Paid"
         } else if ("24".equals(responseCode)) {
             transactionStatus = "Cancelled";
+            ticketStatus = "Cancelled"; // Cập nhật trạng thái ticket thành "Cancelled"
         }
 
-        try (Connection conn = DBconnection.getConnection()) {
+        HttpSession session = request.getSession(false);
+        List<Ticket> pendingCart = (session != null) ? (List<Ticket>) session.getAttribute("pendingCart") : null;
+
+        Connection conn = null;
+        try {
+            conn = DBconnection.getConnection();
+            conn.setAutoCommit(false); // Bắt đầu giao dịch
+
+            // Cập nhật trạng thái giao dịch
             String sql = "UPDATE PaymentTransaction SET TransactionStatus = ?, VNPayResponseCode = ?, VNPayBankCode = ?, VNPayTransactionNo = ? WHERE TransactionID = ?";
             PreparedStatement stmt = conn.prepareStatement(sql);
             stmt.setString(1, transactionStatus);
@@ -195,28 +207,56 @@ public class VNPayServlet extends HttpServlet {
             stmt.setString(5, transactionId);
             stmt.executeUpdate();
 
-            // Nếu giao dịch thất bại hoặc bị hủy, cập nhật trạng thái Invoice và Ticket
-            if (!"Paid".equals(transactionStatus)) {
-                sql = "UPDATE Invoice SET Status = ? WHERE InvoiceID = (SELECT InvoiceID FROM PaymentTransaction WHERE TransactionID = ?)";
-                stmt = conn.prepareStatement(sql);
-                stmt.setString(1, "Cancelled");
-                stmt.setString(2, transactionId);
-                stmt.executeUpdate();
+            // Cập nhật trạng thái Invoice
+            sql = "UPDATE Invoice SET Status = ? WHERE InvoiceID = (SELECT InvoiceID FROM PaymentTransaction WHERE TransactionID = ?)";
+            stmt = conn.prepareStatement(sql);
+            stmt.setString(1, transactionStatus);
+            stmt.setString(2, transactionId);
+            stmt.executeUpdate();
 
-                sql = "UPDATE Ticket SET Status = 'Cancelled' WHERE TicketID = (SELECT TicketID FROM Invoice WHERE InvoiceID = (SELECT InvoiceID FROM PaymentTransaction WHERE TransactionID = ?))";
-                stmt = conn.prepareStatement(sql);
-                stmt.setString(1, transactionId);
-                stmt.executeUpdate();
+            // Cập nhật trạng thái Ticket
+            if (pendingCart != null) {
+                for (Ticket ticket : pendingCart) {
+                    sql = "UPDATE Ticket SET Status = ? WHERE TicketID = ?";
+                    stmt = conn.prepareStatement(sql);
+                    stmt.setString(1, ticketStatus);
+                    stmt.setString(2, ticket.getTicketID());
+                    stmt.executeUpdate();
+                }
             }
+
+            conn.commit(); // Xác nhận giao dịch
         } catch (SQLException e) {
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (SQLException ex) {
+                    ex.printStackTrace();
+                }
+            }
             e.printStackTrace();
             response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Error updating transaction");
             return;
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
         }
 
-        // Chuyển hướng người dùng về trang giỏ hàng với thông báo
+        // Xóa thông tin tạm thời khỏi session
+        if (session != null) {
+            session.removeAttribute("pendingCart");
+            session.removeAttribute("pendingInvoice");
+            session.removeAttribute("pendingTransactionId");
+        }
+
         String message = "Thanh toán " + ("Paid".equals(transactionStatus) ? "thành công" : "thất bại") + ". Mã giao dịch: " + transactionId;
-        response.sendRedirect("cart?action=view&message=" + URLEncoder.encode(message, StandardCharsets.UTF_8));
+        response.sendRedirect("cart?action=history&message=" + URLEncoder.encode(message, StandardCharsets.UTF_8));
     }
 
     private String hmacSHA512(String key, String data) {
